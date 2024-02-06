@@ -1,8 +1,9 @@
+import networkx as nx
 import numpy as np
 import pandas as pd
-import networkx as nx
 from scipy.spatial.transform import Rotation as R
-from ssl_neuron.utils import neighbors_to_adjacency
+
+from ssl_neuron.utils import neighbors_to_adjacency, remap_neighbors
 
 
 def connect_graph(adj_matrix, neighbors, features, verbose=False):
@@ -25,7 +26,6 @@ def connect_graph(adj_matrix, neighbors, features, verbose=False):
             leaf_nodes = [n for n in nodes if len(neighbors2[n]) == 1]
 
             if len(leaf_nodes) > 0:
-
                 min_comp_dist = np.inf
                 min_comp_dist_id = -1
                 min_comp_dist_node = -1
@@ -58,27 +58,26 @@ def connect_graph(adj_matrix, neighbors, features, verbose=False):
         if verbose:
             print(count, num_comp)
         count += 1
-        
+
     return adj_matrix, neighbors2
 
 
 def rotate_cell(cell_id, morphology, df):
-    """ 
+    """
     Rotate neurons vertically with respect to pia.
     Args:
         cell_id: str
         morphology: AllenSDK morphology object
         df: pandas dataframe containing angles per neuron
     """
-    z_rot = df[df['specimen_id']==cell_id]['upright_angle'].values[0]
-    rot1 = R.from_euler('z', z_rot, degrees=True).as_matrix()
+    z_rot = df[df["specimen_id"] == cell_id]["upright_angle"].values[0]
+    rot1 = R.from_euler("z", z_rot, degrees=True).as_matrix()
     rot_list = list(rot1.flatten()) + [0, 0, 0]
     morphology.apply_affine(rot_list)
 
-
-    x_rot = df[df['specimen_id']==cell_id]['estimated_slice_angle'].values[0]
+    x_rot = df[df["specimen_id"] == cell_id]["estimated_slice_angle"].values[0]
     if not pd.isna(x_rot):
-        rot2 = R.from_euler('x', x_rot, degrees=True).as_matrix()
+        rot2 = R.from_euler("x", x_rot, degrees=True).as_matrix()
         rot_list2 = list(rot2.flatten()) + [0, 0, 0]
         morphology.apply_affine(rot_list2)
 
@@ -86,29 +85,29 @@ def rotate_cell(cell_id, morphology, df):
 
 
 def remove_axon(neighbors, features, soma_id):
-    """ Removes all nodes and edges in graph marked as axons.
+    """Removes all nodes and edges in graph marked as axons.
 
-        Feature dimensions:
-            0 - 2: xyz coordinates
-            3: radius
-            4 - 7: One-hot encoding of compartment type:
-                4: soma
-                5: axon
-                6: dendrite
-                7: apical dendrite
+    Feature dimensions:
+        0 - 2: xyz coordinates
+        3: radius
+        4 - 7: One-hot encoding of compartment type:
+            4: soma
+            5: axon
+            6: dendrite
+            7: apical dendrite
 
-        Args:
-            neighbors: Dict of node id mapping to the node's neighbors.
-            features: Node features (N x 8)
-            soma id: Soma node index (int)
+    Args:
+        neighbors: Dict of node id mapping to the node's neighbors.
+        features: Node features (N x 8)
+        soma id: Soma node index (int)
 
-        Returns:
-            neighbors: Updated neighbor dict without axon nodes.
-            features: Updated feature array without axon nodes (M x 8).
-            soma id: Updated soma node index.
+    Returns:
+        neighbors: Updated neighbor dict without axon nodes.
+        features: Updated feature array without axon nodes (M x 8).
+        soma id: Updated soma node index.
     """
     # Get node indices corresponding to axon nodes.
-    axon_mask = (features[:, 5] == 1)
+    axon_mask = features[:, 5] == 1
     axon_idcs = list(np.where(axon_mask)[0])
 
     # Remove axon nodes from features.
