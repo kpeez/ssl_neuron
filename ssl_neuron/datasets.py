@@ -165,7 +165,7 @@ class GraphDataset(Dataset):
 
 def build_dataloader(config, use_cuda=torch.cuda.is_available()):
 
-    kwargs = {'num_workers':config['data']['num_workers'], 'pin_memory':True, 'persistent_workers': True} if use_cuda else {}
+    kwargs = {'num_workers':config['data']['num_workers'], 'pin_memory':True, 'persistent_workers': False} if use_cuda else {}
 
     train_loader = DataLoader(
             GraphDataset(config, mode='train'),
