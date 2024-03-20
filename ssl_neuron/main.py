@@ -13,7 +13,8 @@ parser.add_argument(
 
 def main(args):
     # load config
-    config = json.load(open(args.config))
+    with open(args.config, "r") as f:
+        config = json.load(f)
 
     # load data
     print("Loading dataset: {}".format(config["data"]["class"]))
