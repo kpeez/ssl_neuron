@@ -19,9 +19,9 @@ def connect_graph(adj_matrix, neighbors, features, verbose=False):
     num_comp = nx.number_connected_components(G)
     count = 1
     while num_comp > 1:
-        components = {i: l for i, l in enumerate(list(nx.connected_components(G)))}
+        components = dict(enumerate(list(nx.connected_components(G))))
         components_ids = list(components.keys())
-        for i, c_id in enumerate(components_ids):
+        for _, c_id in enumerate(components_ids):
             nodes = components[c_id]
             leaf_nodes = [n for n in nodes if len(neighbors2[n]) == 1]
 
@@ -29,15 +29,15 @@ def connect_graph(adj_matrix, neighbors, features, verbose=False):
                 min_comp_dist = np.inf
                 min_comp_dist_id = -1
                 min_comp_dist_node = -1
-                for i, l in enumerate(leaf_nodes):
-                    ne = neighbors2[l]
+                for _, leaf in enumerate(leaf_nodes):
+                    ne = neighbors2[leaf]
                     ne = next(ne)  # list(ne)[0]
 
-                    node_pos = features[l][:3]
+                    node_pos = features[leaf][:3]
 
                     nodes_pos_diff = ((features[:, :3] - node_pos) ** 2).sum(axis=1)
                     nodes_pos_diff[ne] = np.inf
-                    nodes_pos_diff[l] = np.inf
+                    nodes_pos_diff[leaf] = np.inf
                     nodes_pos_diff[list(nodes)] = np.inf
 
                     min_dist_id = np.argmin(nodes_pos_diff)
@@ -46,7 +46,7 @@ def connect_graph(adj_matrix, neighbors, features, verbose=False):
                     if min_comp_dist > min_dist:
                         min_comp_dist = min_dist
                         min_comp_dist_id = min_dist_id
-                        min_comp_dist_node = l
+                        min_comp_dist_node = leaf
 
                 if min_comp_dist_id != -1 and min_comp_dist_node != -1:
                     neighbors2[min_comp_dist_id].add(min_comp_dist_node)
@@ -72,13 +72,14 @@ def rotate_cell(cell_id, morphology, df):
     """
     z_rot = df[df["specimen_id"] == cell_id]["upright_angle"].values[0]
     rot1 = R.from_euler("z", z_rot, degrees=True).as_matrix()
-    rot_list = list(rot1.flatten()) + [0, 0, 0]
+    rot_list = [*list(rot1.flatten()), 0, 0, 0]
     morphology.apply_affine(rot_list)
 
     x_rot = df[df["specimen_id"] == cell_id]["estimated_slice_angle"].values[0]
     if not pd.isna(x_rot):
         rot2 = R.from_euler("x", x_rot, degrees=True).as_matrix()
-        rot_list2 = list(rot2.flatten()) + [0, 0, 0]
+        rot_list2 = [*list(rot2.flatten()), 0, 0, 0]
+
         morphology.apply_affine(rot_list2)
 
     return morphology
