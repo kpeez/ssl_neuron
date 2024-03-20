@@ -64,7 +64,7 @@ class GraphDataset(Dataset):
                     neighbors=neighbors,
                     not_deleted=set(range(len(neighbors))),
                     keep_nodes=1000,
-                    protected=[soma_id],
+                    protected=(soma_id),
                 )
                 # Remap neighbor indices to 0..999.
                 neighbors, subsampled2new = remap_neighbors(neighbors)
@@ -97,7 +97,7 @@ class GraphDataset(Dataset):
     def _delete_subbranch(self, neighbors, soma_id, distances, leaf_branch_nodes):
         leaf_branch_nodes = set(leaf_branch_nodes)
         not_deleted = set(range(len(neighbors)))
-        for i in range(self.n_drop_branch):
+        for _ in range(self.n_drop_branch):
             neighbors, drop_nodes = drop_random_branch(
                 leaf_branch_nodes, neighbors, distances, keep_nodes=self.n_nodes
             )
@@ -120,13 +120,16 @@ class GraphDataset(Dataset):
             neighbors=neighbors2,
             not_deleted=not_deleted,
             keep_nodes=self.n_nodes,
-            protected=soma_id,
+            protected=(soma_id),
         )
 
         # Compute new adjacency matrix.
         adj_matrix = neighbors_to_adjacency_torch(neighbors2, not_deleted)
 
-        assert adj_matrix.shape == (self.n_nodes, self.n_nodes), "{} {}".format(adj_matrix.shape)
+        assert adj_matrix.shape == (
+            self.n_nodes,
+            self.n_nodes,
+        ), f"Adjacency matrix has shape: {adj_matrix.shape}"
 
         return neighbors2, adj_matrix, not_deleted
 
@@ -179,7 +182,10 @@ class GraphDataset(Dataset):
         return features1, features2, adj_matrix1, adj_matrix2
 
 
-def build_dataloader(config, use_cuda=torch.cuda.is_available()):
+def build_dataloader(config, use_cuda: bool = False):
+    if torch.cuda.is_available():
+        use_cuda = True
+
     kwargs = (
         {
             "num_workers": config["data"]["num_workers"],
