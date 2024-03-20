@@ -2,9 +2,10 @@
 # DINO adapted from https://github.com/lucidrains/vit-pytorch/blob/main/vit_pytorch/dino.py
 
 import copy
-import torch
-import torch.nn as nn
 from typing import Any
+
+import torch
+from torch import nn
 
 
 class GraphAttention(nn.Module):
@@ -37,14 +38,14 @@ class GraphAttention(nn.Module):
 
         self.qkv_projection = nn.Linear(dim, dim * num_heads * 3, bias=bias)
         self.proj = nn.Linear(dim * num_heads, dim)
-        
+
         # Weigth to trade of local vs. global attention.
         self.predict_gamma = nn.Linear(dim, 2)
         # Initialize projection such that gamma is close to 1
         # in the beginning of training.
         self.predict_gamma.weight.data.uniform_(0.0, 0.01)
 
-        
+
     @torch.jit.script
     def fused_mul_add(a, b, c, d):
         return (a * b) + (c * d)
@@ -66,13 +67,13 @@ class GraphAttention(nn.Module):
 
         # Compute trade-off between local and global attention.
         attn = self.fused_mul_add(gamma[:, :, :, 0:1], attn, gamma[:, :, :, 1:2], adj)
-        
+
         attn = attn.softmax(dim=-1)
 
         x = (attn @ value).transpose(1, 2).reshape(B, N, -1) # (batch_size x num_nodes x (num_heads * dim))
         return self.proj(x)
-    
-    
+
+
 class MLP(nn.Module):
     def __init__(self, dim: int, hidden_dim: int) -> nn.Module:
         super().__init__()
@@ -107,8 +108,8 @@ class AttentionBlock(nn.Module):
         x = self.norm2(x)
         x = self.mlp(x) + x
         return x
-    
-    
+
+
 class GraphTransformer(nn.Module):
     def __init__(self,
                  n_nodes: int = 200,
@@ -170,7 +171,7 @@ class GraphTransformer(nn.Module):
         cls_tokens = self.cls_token.repeat(B, 1, 1)
         x = torch.cat((cls_tokens, x), dim=1)
 
-        # Add classification token entry to adjanceny matrix. 
+        # Add classification token entry to adjanceny matrix.
         adj_cls = torch.zeros(B, N + 1, N + 1, device=node_feat.device)
         # TODO(test if useful)
         adj_cls[:, 0, 0] = 1.
@@ -211,7 +212,7 @@ class ExponentialMovingAverage():
 
 
 def update_moving_average(ema_updater, teacher_model, student_model, decay=None):
-    for student_params, teacher_params in zip(student_model.parameters(), teacher_model.parameters()):
+    for student_params, teacher_params in zip(student_model.parameters(), teacher_model.parameters(), strict=False):
         teacher_weights, weight_update = teacher_params.data, student_params.data
         teacher_params.data = ema_updater.update_average(teacher_weights, weight_update, decay=decay)
 
@@ -289,8 +290,8 @@ def create_model(config):
 
     # Create encoder.
     transformer = GraphTransformer(n_nodes=config['data']['n_nodes'],
-                 dim=config['model']['dim'], 
-                 depth=config['model']['depth'], 
+                 dim=config['model']['dim'],
+                 depth=config['model']['depth'],
                  num_heads=config['model']['n_head'],
                  feat_dim=config['data']['feat_dim'],
                  pos_dim=config['model']['pos_dim'],
@@ -298,10 +299,10 @@ def create_model(config):
 
     # Create GraphDINO.
     model = GraphDINO(transformer,
-                 num_classes=num_classes, 
+                 num_classes=num_classes,
                  moving_average_decay=config['model']['move_avg'],
                  center_moving_average_decay=config['model']['center_avg'],
                  teacher_temp=config['model']['teacher_temp']
                 )
-    
+
     return model

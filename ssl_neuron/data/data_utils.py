@@ -31,7 +31,7 @@ def connect_graph(adj_matrix, neighbors, features, verbose=False):
                 min_comp_dist_node = -1
                 for i, l in enumerate(leaf_nodes):
                     ne = neighbors2[l]
-                    ne = list(ne)[0]
+                    ne = next(ne)  # list(ne)[0]
 
                     node_pos = features[l][:3]
 
