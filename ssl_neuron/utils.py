@@ -24,7 +24,7 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-def subsample_graph(neighbors=None, not_deleted=None, keep_nodes=200, protected=[0]):
+def subsample_graph(neighbors=None, not_deleted=None, keep_nodes=200, protected=(0)):
     """
     Subsample graph.
 
@@ -145,7 +145,7 @@ def neighbors_to_adjacency_torch(neighbors, not_deleted):
     n_nodes = len(not_deleted)
 
     new_adj_matrix = torch.zeros((n_nodes, n_nodes), dtype=float)
-    for ii in neighbors.keys():
+    for ii in neighbors:
         for jj in neighbors[ii]:
             i, j = node_map[ii], node_map[jj]
             new_adj_matrix[i, i] = True  # diagonal if needed
@@ -168,7 +168,7 @@ def neighbors_to_adjacency(neighbors, not_deleted):
     n_nodes = len(not_deleted)
 
     new_adj_matrix = np.zeros((n_nodes, n_nodes))
-    for ii in neighbors.keys():
+    for ii in neighbors:
         for jj in neighbors[ii]:
             i, j = node_map[ii], node_map[jj]
             new_adj_matrix[i, i] = True  # diagonal if needed
@@ -186,7 +186,7 @@ def adjacency_to_neighbors(adj_matrix):
     """
     # Remove diagonal to avoid self-neighbors.
     a, b = np.where(adj_matrix - np.eye(len(adj_matrix)) == 1)
-    neigh = dict()
+    neigh = {}
     for _a, _b in zip(a, b, strict=False):
         if _a not in neigh:
             neigh[_a] = set()
@@ -240,8 +240,8 @@ def get_leaf_branch_nodes(neighbors):
 
     candidates = leafs
     next_nodes = []
-    for l in leafs:
-        next_nodes += [n for n in neighbors[l] if len(neighbors[n]) == 2]
+    for leaf in leafs:
+        next_nodes += [n for n in neighbors[leaf] if len(neighbors[n]) == 2]
 
     while next_nodes:
         s = next_nodes.pop(0)
@@ -265,7 +265,7 @@ def compute_node_distances(idx, neighbors):
     queue = []
     queue.append(idx)
 
-    degree = dict()
+    degree = {}
     degree[idx] = 0
 
     while queue:
@@ -292,7 +292,7 @@ def drop_random_branch(nodes, neighbors, distances, keep_nodes=200):
         keep_nodes: Number of nodes to keep in graph
     """
     start = list(nodes)[torch.randint(len(nodes), (1,)).item()]
-    to = list(neighbors[start])[0]
+    to = next(neighbors[start])
 
     if distances[start] > distances[to]:
         start, to = to, start
@@ -384,7 +384,7 @@ def plot_neuron(neighbors, node_feats, ax1=0, ax2=1, soma_id=0, ax=None):
 def plot_tsne(z, labels, targets, colors=None):
     """Plot t-SNE clustering."""
     u_labels = np.unique(labels)
-    fig = plt.figure(1, figsize=(8, 8))
+    _fig = plt.figure(1, figsize=(8, 8))
     for label in u_labels:
         plt.scatter(
             z[labels == label, 0],
