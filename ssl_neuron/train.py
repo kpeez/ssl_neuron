@@ -55,7 +55,7 @@ class Trainer(object):
     def _train_epoch(self, epoch):
         self.model.train()
         losses = AverageMeter()
-        for i, data in enumerate(self.train_loader, 0):
+        for _, data in enumerate(self.train_loader, 0):
             f1, f2, a1, a2 = [x.float().to(self.device, non_blocking=True) for x in data]
             n = a1.shape[0]
 
