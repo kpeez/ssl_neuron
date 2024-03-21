@@ -1,14 +1,16 @@
-from pathlib import Path
 import pickle
-import pandas as pd
-from tqdm import tqdm
+from pathlib import Path
+
 import networkx as nx
 import numpy as np
+import pandas as pd
 from allensdk.core.cell_types_cache import CellTypesCache
 from allensdk.core.swc import read_swc
-from ssl_neuron.data.data_utils import connect_graph, remove_axon, rotate_cell
-from ssl_neuron.utils import neighbors_to_adjacency, plot_neuron, remap_neighbors
+from tqdm import tqdm
 
+from ssl_neuron.data.data_utils import connect_graph, remove_axon, rotate_cell
+
+from .utils import neighbors_to_adjacency
 
 if __name__ == "__main__":
     cell_ids = list(np.load("all_ids.npy"))
@@ -17,8 +19,8 @@ if __name__ == "__main__":
     metadata_file = f"{dpath}/info/41593_2019_417_MOESM5_ESM.xlsx"
     df = pd.read_excel(metadata_file)
     allen_meta = pd.read_csv(f"{dpath}/info/ACT_info_swc.csv")
-    specimen_to_swc = dict(zip(allen_meta["specimen__id"], allen_meta["swc__fname"]))
-    
+    specimen_to_swc = dict(zip(allen_meta["specimen__id"], allen_meta["swc__fname"], strict=False))
+
     for cell_id in tqdm(cell_ids):
         path = Path("./skeletons/", str(cell_id))
         path.mkdir(parents=True, exist_ok=True)
@@ -36,7 +38,7 @@ if __name__ == "__main__":
             # Get node features.
             sec_type = [0, 0, 0, 0]
             sec_type[item["type"] - 1] = 1
-            feat = tuple([item["x"], item["y"], item["z"], item["radius"]]) + tuple(sec_type)
+            feat = (item["x"], item["y"], item["z"], item["radius"], *sec_type)
             idx2node[i] = feat
             # Get neighbors.
             neighbors[i] = set(item["children"])
@@ -47,7 +49,7 @@ if __name__ == "__main__":
         # Normalize soma position to origin.
         norm_features = features.copy()
         norm_features[:, :3] = norm_features[:, :3] - soma_pos
-        
+
         # Test if graph is connected.
         adj_matrix = neighbors_to_adjacency(neighbors, range(len(neighbors)))
         G = nx.Graph(adj_matrix)
@@ -63,4 +65,3 @@ if __name__ == "__main__":
         np.save(Path(path, "features"), norm_features)
         with open(Path(path, "neighbors.pkl"), "wb") as f:
             pickle.dump(dict(neighbors), f, pickle.HIGHEST_PROTOCOL)
-    

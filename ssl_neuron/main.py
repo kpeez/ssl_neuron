@@ -1,30 +1,34 @@
-import json
 import argparse
-from ssl_neuron.train import Trainer
-from ssl_neuron.graphdino import create_model
+import json
+
 from ssl_neuron.datasets import build_dataloader
+from ssl_neuron.graphdino import create_model
+from ssl_neuron.train import Trainer
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', help='Path to config file.', type=str, default='./configs/config.json')
+parser.add_argument(
+    "--config", help="Path to config file.", type=str, default="./configs/config.json"
+)
 
 
 def main(args):
     # load config
-    config = json.load(open(args.config))
-    
+    with open(args.config, "r") as f:
+        config = json.load(f)
+
     # load data
-    print('Loading dataset: {}'.format(config['data']['class']))
+    print("Loading dataset: {}".format(config["data"]["class"]))
     train_loader, val_loader = build_dataloader(config)
 
-    # build model 
+    # build model
     model = create_model(config)
     trainer = Trainer(config, model, [train_loader, val_loader])
 
-    print('Start training.')
+    print("Start training.")
     trainer.train()
-    print('Done.')
+    print("Done.")
 
 
-if __name__ == '__main__':    
+if __name__ == "__main__":
     args = parser.parse_args()
     main(args)
