@@ -1,0 +1,89 @@
+
+[project]
+name = "ssl_neuron"
+version = "1.1"
+description = "SSL-Neuron contains the code to the paper 'Self-supervised Representation Learning of Neuronal Morphologies'"
+authors = [{ name = "Marissa Weis", email = "arissa.weis@bethgelab.org" }]
+readme = "README.md"
+license = { file = "LICENSE" }
+dependencies = [
+  "pip",
+  "allensdk",
+  "numpy",
+  "tqdm",
+  "seaborn",
+  "matplotlib",
+  "networkx==2.5",
+  "scipy",
+  "scikit-learn",
+  "torch",
+  "torchvision",
+  "mypy",
+  "ruff",
+  "typer",
+]
+
+[project.urls]
+repository = "https://github.com/kpeez/ssl_neuron/"
+
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+exclude = [".venv", "external"]
+
+[tool.ruff.lint]
+select = [
+  # pycodestyle
+  "E",
+  "W",
+  # pyflakes
+  "F",
+  # pylint
+  "PL",
+  # isort
+  "I",
+  # flake8-bugbear
+  "B",
+  # flake8-simplify
+  "SIM",
+  # flake8-comprehensions
+  "C4",
+  # ruff
+  "RUF",
+]
+fixable = ["ALL"]
+ignore = [
+  # too many arguments
+  "PLR0913",
+  # magic number
+  "PLR2004",
+  # line too long
+  "E501",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401", "D104"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+files = ["ssl_neuron"]
+plugins = "numpy.typing.mypy_plugin"
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+exclude = [".venv", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["matplotlib.*", "skimage", "xarray", "networkx", "scipy.*", "allensdk.*"]
+ignore_missing_imports = true
+disallow_any_unimported = false
