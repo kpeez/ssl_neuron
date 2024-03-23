@@ -1,11 +1,12 @@
-import concurrent.futures
 import pickle
 from collections.abc import Sequence
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import networkx as nx
 import numpy as np
 from allensdk.core.swc import read_swc
+from tqdm import tqdm
 
 from ssl_neuron.data.data_utils import connect_graph, remove_axon
 from ssl_neuron.utils import neighbors_to_adjacency
@@ -28,7 +29,7 @@ def process_morphology(morphology: tuple[dict, np.ndarray]) -> tuple[dict, np.nd
     for i, item in enumerate(morphology.compartment_list):
         sec_type = [0, 0, 0, 0]
         sec_type[item["type"] - 1] = 1
-        feat = (item["x"], item["y"], item["z"], item["radius"], *sec_type)  # + tuple(sec_type)
+        feat = (item["x"], item["y"], item["z"], item["radius"], *sec_type)
         idx2node[i] = feat
         neighbors[i] = set(item["children"])
         if item["parent"] != -1:
@@ -91,11 +92,11 @@ def process_cells(
     """
     output_dir = Path(output_dir) if output_dir else Path(swc_files[0]).parent
     processed = []
-    with concurrent.futures.ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor() as executor:
         futures = {
             executor.submit(process_cell, file, output_dir): Path(file) for file in swc_files
         }
-        for future in concurrent.futures.as_completed(futures):
+        for future in tqdm(as_completed(futures), total=len(swc_files)):
             file = futures[future]
             try:
                 future.result()
