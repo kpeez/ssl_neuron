@@ -1,10 +1,11 @@
+import concurrent.futures
 import pickle
+from collections.abc import Sequence
 from pathlib import Path
 
 import networkx as nx
 import numpy as np
 from allensdk.core.swc import read_swc
-from tqdm import tqdm
 
 from ssl_neuron.data.data_utils import connect_graph, remove_axon
 from ssl_neuron.utils import neighbors_to_adjacency
@@ -55,16 +56,17 @@ def save_processed_data(path: Path, neighbors: dict, norm_features: np.ndarray) 
         pickle.dump(neighbors, f, pickle.HIGHEST_PROTOCOL)
 
 
-def process_cell(swc_file: str | Path, output_dir: str | None = None) -> None:
+def process_cell(swc_file: str | Path, output_dir: str | Path | None = None) -> None:
     """Processes a single cell, orchestrating the reading, processing, and saving of data.
 
     Args:
         swc_file (str): Path to the SWC file.
+        output_dir (str, optional): Output directory. Defaults to parent of `swc_file` if None.
     """
     swc_file = Path(swc_file)
     cell_id = str(swc_file.stem)
-    output_dir = output_dir or swc_file.parent
-    dpath = Path(f"{output_dir}/skeletons/{cell_id}")
+    export_dir = output_dir or swc_file.parent
+    dpath = Path(f"{export_dir}/skeletons/{cell_id}")
     dpath.mkdir(parents=True, exist_ok=True)
     try:
         morphology = read_morphology(swc_file)
@@ -75,14 +77,35 @@ def process_cell(swc_file: str | Path, output_dir: str | None = None) -> None:
         print(f"Failed on {cell_id}")
 
 
-def process_all_cells(dpath: str, cell_ids: list[str], split: str = "all") -> None:
-    """Iterates over all cell IDs and processes them."""
-    processed_cell_ids = []
-    for cell_id in tqdm(cell_ids):
-        process_cell(dpath, cell_id)
-        processed_cell_ids.append(cell_id)
+def process_cells(
+    swc_files: Sequence[str | Path],
+    split: str = "all",
+    output_dir: str | Path | None = None,
+) -> None:
+    """Processes all cells in a given directory.
 
-    np.save(Path(dpath, f"{split}_ids.npy"), processed_cell_ids)
+    Args:
+        swc_files (Sequence[str | Path]): Path to the SWC files.
+        split (str, optional): Split to process. Defaults to "all".
+        output_dir (str | Path, optional): Output directory. Defaults to parent of `swc_files` if None.
+    """
+    output_dir = Path(output_dir) if output_dir else Path(swc_files[0]).parent
+    processed = []
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = {
+            executor.submit(process_cell, file, output_dir): Path(file) for file in swc_files
+        }
+        for future in concurrent.futures.as_completed(futures):
+            file = futures[future]
+            try:
+                future.result()
+                processed.append(file.stem)
+            except Exception as e:
+                print(e)
+                print(f"Failed to process: {file.stem}")
+
+    print(f"Processed {len(processed)} cells. Saving IDs to {output_dir}/{split.lower()}_ids.npy")
+    np.save(f"{output_dir}/{split}_ids.npy", processed)
 
 
 if __name__ == "__main__":
@@ -91,26 +114,15 @@ if __name__ == "__main__":
     app = Typer()
 
     @app.command()
-    def process_cells(
+    def extract_cell_data(
         swc_path: str = Argument(..., help="Path to the SWC files."),
         split: str = Option("all", "-s", "--split", help="Split to process.", show_default=True),
         output_dir: str = Option(
             None, "-o", "--output-dir", help="Output directory.", show_default=True
         ),
     ) -> None:
-        output_dir = output_dir or Path(swc_path).parent
-
-        processed = []
         swc_files = list(Path(swc_path).glob("*.swc"))
-        for file in tqdm(swc_files, desc="Processing cells"):
-            try:
-                process_cell(file, output_dir)
-                processed.append(file.stem)
-            except Exception as e:
-                print(e)
-                print(f"Failed to process: {file.stem}")
-
-        print(f"Processed {len(processed)} cells. Saving IDs to {output_dir}/{split}_ids.npy")
-        np.save(f"{output_dir}/{split}_ids.npy", processed)
+        print("Processing", len(swc_files), "files...")
+        process_cells(swc_files, split, output_dir)
 
     app()
