@@ -25,6 +25,7 @@ class Trainer(object):
         self.ckpt_dir.mkdir(parents=True, exist_ok=True)
         self.save_every = config["trainer"]["save_ckpt_every"]
         self.writer = SummaryWriter(log_dir=self.output_dir)
+        self.writer.add_hparams({*config["model"], *config["optimizer"]}, {})
         ### datasets
         self.train_loader = dataloaders[0]
         self.val_loader = dataloaders[1]
