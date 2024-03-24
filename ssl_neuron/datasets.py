@@ -42,7 +42,7 @@ class GraphDataset(Dataset):
         self.n_nodes = config["data"]["n_nodes"]
 
         # Load cell ids.
-        cell_ids = list(np.load(Path(data_path, f"{mode}_ids.npy")))
+        cell_ids = list(np.load(Path(f"{data_path}/{mode}_ids.npy").resolve()))
 
         # Load graphs.
         self.manager = Manager()
@@ -64,7 +64,7 @@ class GraphDataset(Dataset):
                     neighbors=neighbors,
                     not_deleted=set(range(len(neighbors))),
                     keep_nodes=1000,
-                    protected=(soma_id),
+                    protected=[soma_id],
                 )
                 # Remap neighbor indices to 0..999.
                 neighbors, subsampled2new = remap_neighbors(neighbors)
