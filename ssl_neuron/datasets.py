@@ -1,4 +1,5 @@
 import pickle
+from collections.abc import Mapping
 from pathlib import Path
 
 import numpy as np
@@ -28,7 +29,12 @@ class GraphDataset(Dataset):
     are assumed to be in microns and y-axis is orthogonal to the pia.
     """
 
-    def __init__(self, config, mode="train", inference=False):
+    def __init__(
+        self,
+        config: Mapping[str, Mapping[str, str]],
+        mode: str = "train",
+        inference: bool = False,
+    ) -> None:
         self.config = config
         self.mode = mode
         self.inference = inference
@@ -91,10 +97,25 @@ class GraphDataset(Dataset):
 
         self.num_samples = len(self.cells)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.num_samples
 
-    def _delete_subbranch(self, neighbors, soma_id, distances, leaf_branch_nodes):
+    def _delete_subbranch(
+        self,
+        neighbors: Mapping[str, list],
+        distances: Mapping[str, list],
+        leaf_branch_nodes: list[int],
+    ) -> set[int]:
+        """Delete random subbranches from the graph.
+
+        Args:
+            neighbors (dict[str, list]): dict of neighbors per node
+            distances (dict[str, float]): dict of distances of nodes to origin
+            leaf_branch_nodes (_type_): _description_
+
+        Returns:
+            tuple[]: _description_
+        """
         leaf_branch_nodes = set(leaf_branch_nodes)
         not_deleted = set(range(len(neighbors)))
         for _ in range(self.n_drop_branch):
@@ -113,7 +134,7 @@ class GraphDataset(Dataset):
         neighbors2 = {k: set(v) for k, v in neighbors.items()}
 
         # Delete random branches.
-        not_deleted = self._delete_subbranch(neighbors2, soma_id, distances, leaf_branch_nodes)
+        not_deleted = self._delete_subbranch(neighbors2, distances, leaf_branch_nodes)
 
         # Subsample graphs to fixed number of nodes.
         neighbors2, not_deleted = subsample_graph(
