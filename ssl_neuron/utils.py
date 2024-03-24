@@ -294,7 +294,7 @@ def drop_random_branch(nodes, neighbors, distances, keep_nodes=200):
         keep_nodes: Number of nodes to keep in graph
     """
     start = list(nodes)[torch.randint(len(nodes), (1,)).item()]
-    to = next(neighbors[start])
+    to = next(iter((neighbors[start])))
 
     if distances[start] > distances[to]:
         start, to = to, start
