@@ -24,7 +24,7 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-def subsample_graph(neighbors=None, not_deleted=None, keep_nodes=200, protected=(0)):
+def subsample_graph(neighbors=None, not_deleted=None, keep_nodes=200, protected=None):
     """
     Subsample graph.
 
@@ -34,6 +34,8 @@ def subsample_graph(neighbors=None, not_deleted=None, keep_nodes=200, protected=
         keep_nodes: number of nodes to keep in graph
         protected: nodes to be excluded from subsampling
     """
+    if protected is None:
+        protected = [0]
     if neighbors is not None:
         k_nodes = len(neighbors)
     else:
