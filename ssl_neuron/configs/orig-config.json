@@ -27,7 +27,7 @@
         "exp_decay": 0.5
     },
     "trainer": {
-        "output_dir": "../data/expt_results",
+        "ckpt_dir": "../data/neuromorpho_small/kp_ckpts",
         "save_ckpt_every": 50,
         "seed": null
     }
