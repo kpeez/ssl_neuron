@@ -1,9 +1,11 @@
 import os
 from collections.abc import Mapping
+from pathlib import Path
 
 import torch
 from torch import Tensor, nn, optim
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 from .utils import AverageMeter, compute_eig_lapl_torch_batch
 
@@ -18,20 +20,20 @@ class Trainer(object):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model = model.to(self.device)
         self.config = config
-        self.ckpt_dir = config["trainer"]["ckpt_dir"]
+        self.output_dir = Path(config["trainer"]["log_dir"])
+        self.ckpt_dir = self.output_dir / "ckpt"
+        self.ckpt_dir.mkdir(parents=True, exist_ok=True)
         self.save_every = config["trainer"]["save_ckpt_every"]
-
+        self.writer = SummaryWriter(log_dir=self.output_dir)
         ### datasets
         self.train_loader = dataloaders[0]
         self.val_loader = dataloaders[1]
-
         ### trainings params
         self.max_iter = config["optimizer"]["max_iter"]
         self.init_lr = config["optimizer"]["lr"]
         self.exp_decay = config["optimizer"]["exp_decay"]
         self.lr_warmup = torch.linspace(0.0, self.init_lr, steps=(self.max_iter // 50) + 1)[1:]
         self.lr_decay = self.max_iter // 5
-
         self.optimizer = optim.Adam(list(self.model.parameters()), lr=0)
 
     def set_lr(self) -> Tensor:
@@ -53,10 +55,8 @@ class Trainer(object):
         while self.curr_iter < self.max_iter:
             # Run one epoch.
             self._train_epoch(epoch)
-
             if epoch % self.save_every == 0:
                 self._save_checkpoint(epoch)
-
             epoch += 1
 
     def _train_epoch(self, epoch: int) -> None:
@@ -71,9 +71,9 @@ class Trainer(object):
 
             self.lr = self.set_lr()
             self.optimizer.zero_grad(set_to_none=True)
-
             loss = self.model(f1, f2, a1, a2, l1, l2)
-
+            self.writer.add_scalar("loss/train_loss", loss, epoch, new_style=True)
+            self.writer.add_scalar("lr", self.lr, epoch, new_style=True)
             # optimize
             loss.sum().backward()
             self.optimizer.step()
