@@ -55,7 +55,7 @@ class Trainer(object):
     def train(self) -> None:
         self.curr_iter = 0
         epoch = 0
-        print(f"Start training for {self.max_iter / len(self.train_loader)} epochs...")
+        print(f"Start training for {self.max_iter // len(self.train_loader)} epochs...")
         while self.curr_iter < self.max_iter:
             # Run one epoch.
             self._train_epoch(epoch)
@@ -93,7 +93,7 @@ class Trainer(object):
         print("Epoch {} | Loss {:.4f}".format(epoch, losses.avg))
 
     def _save_checkpoint(self, epoch: int) -> None:
-        filename = "ckpt_{}.pt".format(epoch)
+        filename = f"ckpt_{epoch:006d}.pt"
         PATH = os.path.join(self.ckpt_dir, filename)
         torch.save(self.model.state_dict(), PATH)
         print("Save model after epoch {} as {}.".format(epoch, filename))
