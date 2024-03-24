@@ -20,15 +20,17 @@ class Trainer(object):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model = model.to(self.device)
         self.config = config
-        self.output_dir = Path(config["trainer"]["log_dir"])
-        self.ckpt_dir = self.output_dir / "ckpt"
+        output_dir = list(Path(config["trainer"]["output_dir"]).glob("run*"))
+        run_num = 1 if not output_dir else max([int(str(x).split("-")[-1]) for x in output_dir]) + 1
+        self.output_dir = Path(config["trainer"]["output_dir"]) / f"run-{run_num:03d}"
+
+        self.ckpt_dir = self.output_dir / "ckpts"
         self.ckpt_dir.mkdir(parents=True, exist_ok=True)
         self.save_every = config["trainer"]["save_ckpt_every"]
         self.writer = SummaryWriter(log_dir=self.output_dir)
-        self.writer.add_hparams({*config["model"], *config["optimizer"]}, {})
+        self.writer.add_hparams({**self.config["model"], **self.config["optimizer"]}, {})
         ### datasets
-        self.train_loader = dataloaders[0]
-        self.val_loader = dataloaders[1]
+        self.train_loader, self.val_loader = dataloaders
         ### trainings params
         self.max_iter = config["optimizer"]["max_iter"]
         self.init_lr = config["optimizer"]["lr"]
@@ -53,12 +55,15 @@ class Trainer(object):
     def train(self) -> None:
         self.curr_iter = 0
         epoch = 0
+        print(f"Start training for {self.max_iter / len(self.train_loader)} epochs...")
         while self.curr_iter < self.max_iter:
             # Run one epoch.
             self._train_epoch(epoch)
             if epoch % self.save_every == 0:
                 self._save_checkpoint(epoch)
             epoch += 1
+
+        self.writer.close()
 
     def _train_epoch(self, epoch: int) -> None:
         self.model.train()
@@ -73,11 +78,11 @@ class Trainer(object):
             self.lr = self.set_lr()
             self.optimizer.zero_grad(set_to_none=True)
             loss = self.model(f1, f2, a1, a2, l1, l2)
-            self.writer.add_scalar("loss/train_loss", loss, epoch, new_style=True)
-            self.writer.add_scalar("lr", self.lr, epoch, new_style=True)
             # optimize
             loss.sum().backward()
             self.optimizer.step()
+            self.writer.add_scalar("loss", loss, epoch, new_style=True)
+            self.writer.add_scalar("lr", self.lr, epoch, new_style=True)
 
             # update teacher weights
             self.model.update_moving_average()
