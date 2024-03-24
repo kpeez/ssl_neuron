@@ -18,6 +18,7 @@ dependencies = [
   "scikit-learn",
   "torch",
   "torchvision",
+  "tensorboard",
   "mypy",
   "ruff",
   "typer",
