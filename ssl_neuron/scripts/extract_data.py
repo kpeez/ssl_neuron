@@ -102,7 +102,9 @@ def process_cells(
             if future.result():
                 processed.append(file.stem)
 
-    print(f"Processed {len(processed)} cells. Saving IDs to {output_dir}/{split.lower()}_ids.npy")
+    print(
+        f"Processed {len(processed)}/{len(swc_files)} cells. Saving IDs to {output_dir}/{split.lower()}_ids.npy"
+    )
     np.save(f"{output_dir}/{split}_ids.npy", processed)
 
 
