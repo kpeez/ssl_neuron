@@ -1,5 +1,5 @@
 import pickle
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
@@ -18,7 +18,7 @@ def read_morphology(swc_file: str | Path) -> tuple[dict, np.ndarray]:
     return morphology
 
 
-def process_morphology(morphology: tuple[dict, np.ndarray]) -> tuple[dict, np.ndarray]:
+def process_morphology(morphology: Sequence[Mapping, np.ndarray]) -> tuple[dict, np.ndarray]:
     """Processes the morphology to extract and normalize features."""
     soma = morphology.soma
     soma_pos = np.array([soma["x"], soma["y"], soma["z"]])
@@ -50,14 +50,15 @@ def process_morphology(morphology: tuple[dict, np.ndarray]) -> tuple[dict, np.nd
     return neighbors, norm_features
 
 
-def save_processed_data(path: Path, neighbors: dict, norm_features: np.ndarray) -> None:
+def save_processed_data(dpath: Path, neighbors: Mapping, norm_features: np.ndarray) -> None:
     """Saves the processed data to disk."""
-    np.save(Path(path, "features.npy"), norm_features)
-    with open(Path(path, "neighbors.pkl"), "wb") as f:
+    dpath.mkdir(parents=True, exist_ok=True)
+    np.save(Path(dpath, "features.npy"), norm_features)
+    with open(Path(dpath, "neighbors.pkl"), "wb") as f:
         pickle.dump(neighbors, f, pickle.HIGHEST_PROTOCOL)
 
 
-def process_cell(swc_file: str | Path, output_dir: str | Path | None = None) -> None:
+def process_cell(swc_file: str | Path, output_dir: str | Path | None = None) -> bool:
     """Processes a single cell, orchestrating the reading, processing, and saving of data.
 
     Args:
@@ -68,14 +69,14 @@ def process_cell(swc_file: str | Path, output_dir: str | Path | None = None) -> 
     cell_id = str(swc_file.stem)
     export_dir = output_dir or swc_file.parent
     dpath = Path(f"{export_dir}/skeletons/{cell_id}")
-    dpath.mkdir(parents=True, exist_ok=True)
     try:
         morphology = read_morphology(swc_file)
         neighbors, norm_features = process_morphology(morphology)
         save_processed_data(dpath, neighbors, norm_features)
+        return True
     except Exception as e:
-        print(e)
-        print(f"Failed on {cell_id}")
+        print(f"Failed to process: {swc_file.stem} error: {e}")
+        return False
 
 
 def process_cells(
@@ -98,12 +99,8 @@ def process_cells(
         }
         for future in tqdm(as_completed(futures), total=len(swc_files)):
             file = futures[future]
-            try:
-                future.result()
+            if future.result():
                 processed.append(file.stem)
-            except Exception as e:
-                print(e)
-                print(f"Failed to process: {file.stem}")
 
     print(f"Processed {len(processed)} cells. Saving IDs to {output_dir}/{split.lower()}_ids.npy")
     np.save(f"{output_dir}/{split}_ids.npy", processed)
