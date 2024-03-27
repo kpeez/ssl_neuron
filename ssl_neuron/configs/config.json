@@ -27,8 +27,8 @@
         "exp_decay": 0.5
     },
     "trainer": {
-        "output_dir": "../data/expt_results/graphdino",
-        "save_ckpt_every": 5,
+        "output_dir": "../datasets/expt_results/graphdino",
+        "save_ckpt_every": 50,
         "seed": 42
     }
 }
