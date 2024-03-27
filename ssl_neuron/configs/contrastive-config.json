@@ -10,8 +10,8 @@
         "teacher_temp": 0.06
     },
     "data": {
-        "class": "neuromorpho",
-        "path": "../datasets/neuromorpho_mouse/processed",
+        "class": "contrastive_train",
+        "path": "../datasets/contrastive_train/processed",
         "n_nodes": 200,
         "feat_dim": 3,
         "batch_size": 64,
@@ -23,7 +23,7 @@
     },
     "optimizer": {
         "lr": 0.0001,
-        "max_iter": 100000,
+        "max_iter": 200000,
         "exp_decay": 0.5
     },
     "trainer": {
