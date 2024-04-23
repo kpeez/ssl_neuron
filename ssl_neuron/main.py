@@ -1,5 +1,6 @@
 import argparse
 import json
+import shutil
 
 from ssl_neuron.datasets import build_dataloader
 from ssl_neuron.graphdino import create_model
@@ -23,8 +24,8 @@ def main(args):
     # build model
     model = create_model(config)
     trainer = Trainer(config, model, [train_loader, val_loader])
-
     print("Start training.")
+    shutil.copy(args.config, trainer.output_dir)
     trainer.train()
     print("Done.")
 
