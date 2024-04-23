@@ -1,7 +1,7 @@
 {
     "model": {
-        "num_classes": 1000,
-        "dim": 32,
+        "num_classes": 3200,
+        "dim": 64,
         "depth": 7,
         "n_head": 8,
         "pos_dim": 32,
@@ -11,10 +11,10 @@
     },
     "data": {
         "class": "neuromorpho",
-        "path": "../../data/demo-neuromorpho/processed",
+        "path": "../datasets/neuromorpho_mouse/processed",
         "n_nodes": 200,
         "feat_dim": 3,
-        "batch_size": 4,
+        "batch_size": 64,
         "num_workers": 2,
         "jitter_var": 1,
         "translate_var": 10,
@@ -23,12 +23,12 @@
     },
     "optimizer": {
         "lr": 0.0001,
-        "max_iter": 50,
+        "max_iter": 500000,
         "exp_decay": 0.5
     },
     "trainer": {
-        "output_dir": "../../data/expt_results/graphdino",
-        "save_ckpt_every": 5,
+        "output_dir": "../datasets/expt_results/graphdino",
+        "save_ckpt_every": 50,
         "seed": 42
     }
 }
