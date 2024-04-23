@@ -23,7 +23,6 @@ class Trainer(object):
         output_dir = list(Path(config["trainer"]["output_dir"]).glob("run*"))
         run_num = 1 if not output_dir else max([int(str(x).split("-")[-1]) for x in output_dir]) + 1
         self.output_dir = Path(config["trainer"]["output_dir"]) / f"run-{run_num:03d}"
-
         self.ckpt_dir = self.output_dir / "ckpts"
         self.ckpt_dir.mkdir(parents=True, exist_ok=True)
         self.save_every = config["trainer"]["save_ckpt_every"]
