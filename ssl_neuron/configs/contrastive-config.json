@@ -1,8 +1,8 @@
 {
     "model": {
-        "num_classes": 1000,
-        "dim": 32,
-        "depth": 7,
+        "num_classes": 3200,
+        "dim": 64,
+        "depth": 10,
         "n_head": 8,
         "pos_dim": 32,
         "move_avg": 0.999,
@@ -14,7 +14,7 @@
         "path": "../datasets/contrastive_train/processed",
         "n_nodes": 200,
         "feat_dim": 3,
-        "batch_size": 64,
+        "batch_size": 128,
         "num_workers": 2,
         "jitter_var": 1,
         "translate_var": 10,

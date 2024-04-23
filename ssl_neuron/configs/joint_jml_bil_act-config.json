@@ -1,6 +1,6 @@
 {
     "model": {
-        "num_classes": 1000,
+        "num_classes": 2000,
         "dim": 32,
         "depth": 7,
         "n_head": 8,
@@ -10,11 +10,11 @@
         "teacher_temp": 0.06
     },
     "data": {
-        "class": "neuromorpho",
-        "path": "../datasets/neuromorpho_mouse/processed",
+        "class": "joint_jml_bil_act",
+        "path": "../datasets/joint_jml_bil_act/processed",
         "n_nodes": 200,
         "feat_dim": 3,
-        "batch_size": 64,
+        "batch_size": 128,
         "num_workers": 2,
         "jitter_var": 1,
         "translate_var": 10,
@@ -23,7 +23,7 @@
     },
     "optimizer": {
         "lr": 0.0001,
-        "max_iter": 100000,
+        "max_iter": 500000,
         "exp_decay": 0.5
     },
     "trainer": {
