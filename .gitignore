@@ -1,6 +1,7 @@
 ssl_neuron/data/skeletons/
 ssl_neuron/data/cell_types/
-
+datasets
+runs
 *.csv
 *.pt
 *.pth
