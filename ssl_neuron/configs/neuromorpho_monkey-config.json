@@ -11,7 +11,7 @@
     },
     "data": {
         "class": "neuromorpho",
-        "path": "../datasets/neuromorpho_mouse/processed",
+        "path": "../datasets/neuromorpho_monkey/processed",
         "n_nodes": 200,
         "feat_dim": 3,
         "batch_size": 64,
@@ -27,7 +27,7 @@
         "exp_decay": 0.5
     },
     "trainer": {
-        "output_dir": "../datasets/expt_results/graphdino",
+        "output_dir": "../../runs/graphdino",
         "save_ckpt_every": 50,
         "seed": 42
     }
